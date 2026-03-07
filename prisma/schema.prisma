@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── NextAuth Adapter Models ────────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Application Models ─────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  image         String?
+  emailVerified DateTime?
+  role          Role      @default(REQUESTER)
+  slackUserId   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  requestsCreated SampleRequest[] @relation("Requester")
+  auditLogs       AuditLog[]
+}
+
+enum Role {
+  REQUESTER
+  APPROVER
+  FLAVORIST
+  QC_OFFICER
+  PACKER
+  SHIPPER
+  ADMIN
+}
+
+model SampleRequest {
+  id                  String          @id @default(cuid())
+  displayId           String          @unique
+  customerName        String
+  productName         String
+  flavorCategory      FlavorCategory
+  sampleType          SampleType
+  quantity            String
+  deadline            DateTime
+  priority            Priority        @default(NORMAL)
+  specialInstructions String?
+
+  status              RequestStatus   @default(REQUESTED)
+  currentAssigneeRole Role?
+
+  requesterId         String
+  requester           User            @relation("Requester", fields: [requesterId], references: [id])
+
+  auditLogs           AuditLog[]
+  images              Image[]
+
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@index([status])
+  @@index([deadline])
+  @@index([requesterId])
+}
+
+enum FlavorCategory {
+  BEVERAGE
+  DAIRY
+  BAKERY
+  CONFECTIONERY
+  SAVOURY
+  OTHER
+}
+
+enum SampleType {
+  OFF_SHELF
+  NEW_CREATION
+}
+
+enum Priority {
+  NORMAL
+  URGENT
+}
+
+enum RequestStatus {
+  REQUESTED
+  APPROVED
+  REVISION_REQUESTED
+  PREPARATION
+  QC_CHECK
+  QC_FAILED
+  PACKING
+  SHIPPED
+  COMPLETED
+  REJECTED
+}
+
+model AuditLog {
+  id             String         @id @default(cuid())
+  requestId      String
+  request        SampleRequest  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User           @relation(fields: [userId], references: [id])
+  previousStatus RequestStatus?
+  newStatus      RequestStatus
+  notes          String?
+  createdAt      DateTime       @default(now())
+
+  @@index([requestId])
+  @@index([createdAt])
+}
+
+model Image {
+  id         String        @id @default(cuid())
+  requestId  String
+  request    SampleRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  gate       RequestStatus
+  url        String
+  filename   String
+  uploadedBy String
+  createdAt  DateTime      @default(now())
+
+  @@index([requestId])
+}
