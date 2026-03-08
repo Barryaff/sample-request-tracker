@@ -14,7 +14,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
@@ -119,7 +118,7 @@ export function AppShell({ user, children }: AppShellProps) {
               </DropdownMenuTrigger>
 
               <DropdownMenuContent align="end" side="bottom" sideOffset={8}>
-                <DropdownMenuLabel className="font-normal">
+                <div className="px-1.5 py-1">
                   <div className="flex flex-col gap-1">
                     <p className="text-sm font-medium leading-none">
                       {user.name}
@@ -128,11 +127,11 @@ export function AppShell({ user, children }: AppShellProps) {
                       {user.email}
                     </p>
                   </div>
-                </DropdownMenuLabel>
+                </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel>
+                <div className="px-1.5 py-1 text-xs font-medium text-muted-foreground">
                   Role: {ROLE_LABELS[user.role]}
-                </DropdownMenuLabel>
+                </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="p-0"
