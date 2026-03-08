@@ -28,6 +28,11 @@ export const PRIORITY_CONFIG: Record<Priority, { label: string; bgClass: string;
   URGENT: { label: "Urgent", bgClass: "bg-red-100",    textClass: "text-red-700" },
 };
 
+export const PRIORITY_LABELS: Record<Priority, string> = {
+  NORMAL: "Normal",
+  URGENT: "Urgent",
+};
+
 export const FLAVOR_CATEGORY_LABELS: Record<FlavorCategory, string> = {
   BEVERAGE:      "Beverage",
   DAIRY:         "Dairy",

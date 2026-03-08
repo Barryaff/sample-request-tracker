@@ -13,6 +13,7 @@ import {
 import {
   FLAVOR_CATEGORY_LABELS,
   PRIORITY_CONFIG,
+  PRIORITY_LABELS,
   SAMPLE_TYPE_LABELS,
 } from "@/lib/constants";
 import { createRequest } from "@/app/actions/request-actions";
@@ -158,6 +159,7 @@ export function RequestForm() {
         <Label>Flavor Category *</Label>
         <Select
           value={flavorCategory}
+          items={FLAVOR_CATEGORY_LABELS}
           onValueChange={(val) =>
             setValue("flavorCategory", val as FlavorCategory, {
               shouldValidate: true,
@@ -190,6 +192,7 @@ export function RequestForm() {
         <Label>Sample Type *</Label>
         <Select
           value={sampleType}
+          items={SAMPLE_TYPE_LABELS}
           onValueChange={(val) =>
             setValue("sampleType", val as SampleType, {
               shouldValidate: true,
@@ -254,6 +257,7 @@ export function RequestForm() {
         <Label>Priority</Label>
         <Select
           value={priority}
+          items={PRIORITY_LABELS}
           onValueChange={(val) =>
             setValue("priority", val as Priority, {
               shouldValidate: true,
