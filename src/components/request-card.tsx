@@ -23,55 +23,48 @@ export function RequestCard({ request }: RequestCardProps) {
     <Link href={`/requests/${request.id}`} className="group block">
       <div
         className={cn(
-          "card-hover relative overflow-hidden rounded-xl border-l-[3px] bg-card ring-1 ring-foreground/[0.06]",
+          "card-lift relative overflow-hidden rounded-2xl border-l-4 bg-card p-5 shadow-sm shadow-black/[0.03] ring-1 ring-black/[0.04]",
           priorityConfig.borderClass,
         )}
       >
-        <div className="flex items-center gap-4 px-5 py-4">
-          {/* Left section: main info */}
-          <div className="min-w-0 flex-1 space-y-2">
-            {/* Top row: ID + badges */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-xs font-semibold tracking-wide text-muted-foreground/80">
-                {request.displayId}
-              </span>
-              <StatusBadge status={request.status} />
-              <PriorityBadge priority={request.priority} />
-            </div>
+        {/* Top: ID + badges */}
+        <div className="mb-3 flex items-center gap-2">
+          <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-[11px] font-bold tracking-wider text-muted-foreground">
+            {request.displayId}
+          </span>
+          <StatusBadge status={request.status} />
+          <PriorityBadge priority={request.priority} />
+          <ChevronRight className="ml-auto size-4 text-muted-foreground/30 transition-all duration-200 group-hover:translate-x-1 group-hover:text-primary" />
+        </div>
 
-            {/* Product name */}
-            <h3 className="truncate text-[15px] font-semibold text-foreground">
-              {request.productName}
-            </h3>
+        {/* Product name */}
+        <h3 className="mb-2.5 text-base font-semibold tracking-tight text-foreground group-hover:text-primary transition-colors duration-200">
+          {request.productName}
+        </h3>
 
-            {/* Meta row */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-              <span className="font-medium text-foreground/70">
-                {request.customerName}
+        {/* Meta grid */}
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[12px] text-muted-foreground">
+          <span className="font-medium text-foreground/70">
+            {request.customerName}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <UserIcon className="size-3 text-muted-foreground/50" />
+            {request.requester.name}
+          </span>
+          <span
+            className={cn(
+              "flex items-center gap-1.5",
+              isOverdue && "font-bold text-red-600",
+            )}
+          >
+            <CalendarIcon className="size-3 text-muted-foreground/50" />
+            {format(new Date(request.deadline), "MMM d, yyyy")}
+            {isOverdue && (
+              <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-[9px] font-extrabold tracking-wider text-red-700 uppercase">
+                Overdue
               </span>
-              <span className="flex items-center gap-1">
-                <UserIcon className="size-3" />
-                {request.requester.name}
-              </span>
-              <span
-                className={cn(
-                  "flex items-center gap-1",
-                  isOverdue && "font-semibold text-red-600",
-                )}
-              >
-                <CalendarIcon className="size-3" />
-                {format(new Date(request.deadline), "MMM d, yyyy")}
-                {isOverdue && (
-                  <span className="ml-1 rounded bg-red-100 px-1 py-0.5 text-[10px] font-bold text-red-700 uppercase">
-                    Overdue
-                  </span>
-                )}
-              </span>
-            </div>
-          </div>
-
-          {/* Right: chevron */}
-          <ChevronRight className="size-4 shrink-0 text-muted-foreground/40 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
+            )}
+          </span>
         </div>
       </div>
     </Link>
