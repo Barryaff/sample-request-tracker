@@ -9,46 +9,56 @@ interface AuditTimelineProps {
 export function AuditTimeline({ entries }: AuditTimelineProps) {
   if (entries.length === 0) {
     return (
-      <p className="py-4 text-center text-sm text-muted-foreground">
-        No audit history yet.
+      <p className="py-6 text-center text-sm text-muted-foreground">
+        No activity yet.
       </p>
     );
   }
 
   return (
     <div className="relative">
-      {/* Vertical line */}
-      <div className="absolute left-3 top-0 h-full w-px bg-border" />
+      {/* Gradient vertical line */}
+      <div className="absolute left-[11px] top-2 bottom-2 w-px bg-gradient-to-b from-primary/30 via-border to-border" />
 
-      <div className="flex flex-col gap-6">
-        {entries.map((entry) => (
-          <div key={entry.id} className="relative flex gap-4 pl-9">
+      <div className="flex flex-col gap-5">
+        {entries.map((entry, i) => (
+          <div key={entry.id} className="relative flex gap-3.5 pl-8">
             {/* Dot */}
-            <div className="absolute left-1.5 top-1.5 size-3 rounded-full border-2 border-primary bg-background" />
+            <div
+              className={`absolute left-1 top-1 size-[9px] rounded-full border-2 ${
+                i === 0
+                  ? "border-primary bg-primary shadow-sm shadow-primary/30"
+                  : "border-border bg-background"
+              }`}
+            />
 
-            <div className="flex flex-1 flex-col gap-1">
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                <span className="font-medium">{entry.user.name}</span>
+            <div className="flex flex-1 flex-col gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5 text-[13px]">
+                <span className="font-semibold">{entry.user.name}</span>
 
                 {entry.previousStatus ? (
-                  <span className="flex flex-wrap items-center gap-1.5">
-                    <StatusBadge status={entry.previousStatus} />
-                    <span className="text-muted-foreground">&rarr;</span>
-                    <StatusBadge status={entry.newStatus} />
+                  <span className="flex flex-wrap items-center gap-1">
+                    <StatusBadge status={entry.previousStatus} size="sm" />
+                    <span className="text-muted-foreground/50">&rarr;</span>
+                    <StatusBadge status={entry.newStatus} size="sm" />
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground">created as</span>
-                    <StatusBadge status={entry.newStatus} />
+                  <span className="flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground">
+                      created as
+                    </span>
+                    <StatusBadge status={entry.newStatus} size="sm" />
                   </span>
                 )}
               </div>
 
               {entry.notes && (
-                <p className="text-sm text-muted-foreground">{entry.notes}</p>
+                <p className="rounded-lg bg-muted/50 px-2.5 py-1.5 text-[13px] text-muted-foreground">
+                  {entry.notes}
+                </p>
               )}
 
-              <time className="text-xs text-muted-foreground">
+              <time className="text-[11px] text-muted-foreground/60">
                 {formatDistanceToNow(new Date(entry.createdAt), {
                   addSuffix: true,
                 })}

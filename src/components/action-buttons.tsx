@@ -7,6 +7,9 @@ import { getValidTransitions, canUserTransition } from "@/lib/workflow-shared";
 import { transitionRequestStatus } from "@/app/actions/request-actions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowRight, AlertTriangle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ActionButtonsProps {
   requestId: string;
@@ -19,6 +22,7 @@ const NOTES_REQUIRED_STATUSES = new Set<RequestStatus>([
   "REJECTED",
   "REVISION_REQUESTED",
   "QC_FAILED",
+  "CANCELLED",
 ]);
 
 export function ActionButtons({
@@ -33,11 +37,10 @@ export function ActionButtons({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  if (!canUserTransition(userRole, currentStatus)) {
-    return null;
-  }
-
-  const validTransitions = getValidTransitions(currentStatus, sampleType);
+  const allTransitions = getValidTransitions(currentStatus, sampleType);
+  const validTransitions = allTransitions.filter((toStatus) =>
+    canUserTransition(userRole, currentStatus, toStatus),
+  );
 
   if (validTransitions.length === 0) {
     return null;
@@ -47,12 +50,10 @@ export function ActionButtons({
     setError(null);
 
     if (confirmingStatus === toStatus) {
-      // Already confirming this one -- user clicked "Confirm"
       handleConfirm(toStatus);
       return;
     }
 
-    // Start confirmation flow
     setConfirmingStatus(toStatus);
     setNotes("");
   }
@@ -100,64 +101,84 @@ export function ActionButtons({
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-2">
-        {validTransitions.map((toStatus) => (
-          <Button
-            key={toStatus}
-            variant={getButtonVariant(toStatus)}
-            size="sm"
-            disabled={
-              isPending ||
-              (confirmingStatus !== null && confirmingStatus !== toStatus)
-            }
-            onClick={() => handleClick(toStatus)}
-          >
-            {STATUS_CONFIG[toStatus].label}
-          </Button>
-        ))}
-      </div>
-
-      {confirmingStatus && (
-        <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/50 p-3">
-          <p className="text-sm font-medium">
-            Transition to{" "}
-            <span className="font-semibold">
-              {STATUS_CONFIG[confirmingStatus].label}
-            </span>
-            ?
-          </p>
-
-          {NOTES_REQUIRED_STATUSES.has(confirmingStatus) && (
-            <Textarea
-              placeholder="Provide a reason (required)..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="min-h-20"
-            />
-          )}
-
-          {error && <p className="text-sm text-destructive">{error}</p>}
-
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              disabled={isPending}
-              onClick={() => handleConfirm(confirmingStatus)}
-            >
-              {isPending ? "Confirming..." : "Confirm"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={isPending}
-              onClick={handleCancel}
-            >
-              Cancel
-            </Button>
-          </div>
+    <Card className="overflow-hidden">
+      <CardHeader className="border-b bg-muted/30">
+        <div className="flex items-center gap-2">
+          <ArrowRight className="size-4 text-primary" />
+          <CardTitle>Actions</CardTitle>
         </div>
-      )}
-    </div>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3 pt-5">
+        <div className="flex flex-wrap gap-2">
+          {validTransitions.map((toStatus) => {
+            const config = STATUS_CONFIG[toStatus];
+            return (
+              <Button
+                key={toStatus}
+                variant={getButtonVariant(toStatus)}
+                size="sm"
+                disabled={
+                  isPending ||
+                  (confirmingStatus !== null && confirmingStatus !== toStatus)
+                }
+                onClick={() => handleClick(toStatus)}
+                className="gap-1.5"
+              >
+                <span
+                  className={cn("size-1.5 rounded-full", config.dotClass)}
+                />
+                {config.label}
+              </Button>
+            );
+          })}
+        </div>
+
+        {confirmingStatus && (
+          <div className="animate-slide-up rounded-xl border border-border bg-muted/30 p-4">
+            <p className="text-sm font-medium">
+              Transition to{" "}
+              <span className="font-bold">
+                {STATUS_CONFIG[confirmingStatus].label}
+              </span>
+              ?
+            </p>
+
+            {NOTES_REQUIRED_STATUSES.has(confirmingStatus) && (
+              <Textarea
+                placeholder="Provide a reason (required)..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="mt-3 min-h-20"
+              />
+            )}
+
+            {error && (
+              <div className="mt-2 flex items-center gap-1.5 text-sm text-destructive">
+                <AlertTriangle className="size-3.5" />
+                {error}
+              </div>
+            )}
+
+            <div className="mt-3 flex gap-2">
+              <Button
+                size="sm"
+                disabled={isPending}
+                onClick={() => handleConfirm(confirmingStatus)}
+              >
+                {isPending ? "Confirming..." : "Confirm"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isPending}
+                onClick={handleCancel}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

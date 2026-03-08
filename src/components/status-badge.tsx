@@ -4,19 +4,27 @@ import { cn } from "@/lib/utils";
 
 interface StatusBadgeProps {
   status: RequestStatus;
+  size?: "sm" | "default";
 }
 
-export function StatusBadge({ status }: StatusBadgeProps) {
+export function StatusBadge({ status, size = "default" }: StatusBadgeProps) {
   const config = STATUS_CONFIG[status];
 
   return (
     <span
       className={cn(
-        "inline-flex h-5 w-fit shrink-0 items-center justify-center rounded-4xl px-2 py-0.5 text-xs font-medium whitespace-nowrap",
+        "inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full font-medium whitespace-nowrap",
         config.bgClass,
         config.textClass,
+        size === "sm"
+          ? "h-5 px-2 text-[10px]"
+          : "h-6 px-2.5 text-[11px]",
       )}
     >
+      <span
+        className={cn("size-1.5 shrink-0 rounded-full", config.dotClass)}
+        aria-hidden="true"
+      />
       {config.label}
     </span>
   );
