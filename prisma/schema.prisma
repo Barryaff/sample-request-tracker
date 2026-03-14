@@ -45,6 +45,116 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+enum Role {
+  REQUESTER
+  APPROVER
+  FLAVORIST
+  QC_OFFICER
+  PACKER
+  SHIPPER
+  ADMIN
+}
+
+enum RequestStatus {
+  REQUESTED
+  APPROVED
+  REVISION_REQUESTED
+  PREPARATION
+  QC_CHECK
+  QC_FAILED
+  PACKING
+  SHIPPED
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum FlavorCategory {
+  BEVERAGE
+  DAIRY
+  BAKERY
+  CONFECTIONERY
+  SAVOURY
+  NUTRACEUTICAL
+  ORAL_CARE
+  TOBACCO
+  PERSONAL_CARE
+  PET_FOOD
+  PHARMACEUTICAL
+  OTHER
+}
+
+enum SampleType {
+  OFF_SHELF
+  NEW_CREATION
+  MATCHING
+  MODIFICATION
+  GOLD_STANDARD
+  PRODUCTION_TRIAL
+  COST_REDUCTION
+  REFORMULATION
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+  CRITICAL
+}
+
+enum FlavorDesignation {
+  NATURAL
+  NATURE_IDENTICAL
+  ARTIFICIAL
+  ORGANIC
+  WONF
+}
+
+enum PhysicalForm {
+  LIQUID
+  POWDER
+  PASTE
+  EMULSION
+  SPRAY_DRIED
+  ENCAPSULATED
+  OIL_SOLUBLE
+  WATER_SOLUBLE
+}
+
+enum QcOutcome {
+  PASS
+  FAIL
+  CONDITIONAL_PASS
+}
+
+enum QuantityUnit {
+  G
+  KG
+  ML
+  L
+  OZ
+  LB
+  UNIT
+}
+
+enum ShippingCarrier {
+  DHL
+  FEDEX
+  UPS
+  LOCAL_COURIER
+  HAND_DELIVERY
+  OTHER
+}
+
+enum ShipTemp {
+  AMBIENT
+  CHILLED
+  FROZEN
+}
+
 // ─── Application Models ─────────────────────────────────────────────────────
 
 model User {
@@ -62,16 +172,25 @@ model User {
   sessions        Session[]
   requestsCreated SampleRequest[] @relation("Requester")
   auditLogs       AuditLog[]
+  qcResultsTested QcResult[]      @relation("QcTester")
 }
 
-enum Role {
-  REQUESTER
-  APPROVER
-  FLAVORIST
-  QC_OFFICER
-  PACKER
-  SHIPPER
-  ADMIN
+model Customer {
+  id            String   @id @default(cuid())
+  name          String
+  company       String?
+  contactPerson String?
+  email         String?
+  phone         String?
+  address       String?
+  country       String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  requests SampleRequest[]
+
+  @@index([name])
 }
 
 model SampleRequest {
@@ -86,53 +205,40 @@ model SampleRequest {
   priority            Priority        @default(NORMAL)
   specialInstructions String?
 
+  // ── Flavor house specifics (all optional for backward compat) ──
+  flavorDesignation      FlavorDesignation?
+  physicalForm           PhysicalForm?
+  quantityValue          Float?
+  quantityUnit           QuantityUnit?
+  targetProfile          String?          // Desired flavor profile description
+  referenceProduct       String?          // Reference product for matching
+  regulatoryRequirements String?          // Halal, Kosher, allergen-free, etc.
+  allergenInfo           String?          // Allergen declarations
+  shelfLife              String?          // Expected shelf life requirement
+  storageConditions      String?          // Storage conditions requirement
+
+  // ── Workflow ──
   status              RequestStatus   @default(REQUESTED)
   currentAssigneeRole Role?
 
-  requesterId         String
-  requester           User            @relation("Requester", fields: [requesterId], references: [id])
+  // ── Relations ──
+  requesterId String
+  requester   User     @relation("Requester", fields: [requesterId], references: [id])
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id])
 
-  auditLogs           AuditLog[]
-  images              Image[]
+  auditLogs AuditLog[]
+  images    Image[]
+  qcResult  QcResult?
+  shipment  Shipment?
 
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([deadline])
   @@index([requesterId])
-}
-
-enum FlavorCategory {
-  BEVERAGE
-  DAIRY
-  BAKERY
-  CONFECTIONERY
-  SAVOURY
-  OTHER
-}
-
-enum SampleType {
-  OFF_SHELF
-  NEW_CREATION
-}
-
-enum Priority {
-  NORMAL
-  URGENT
-}
-
-enum RequestStatus {
-  REQUESTED
-  APPROVED
-  REVISION_REQUESTED
-  PREPARATION
-  QC_CHECK
-  QC_FAILED
-  PACKING
-  SHIPPED
-  COMPLETED
-  REJECTED
+  @@index([customerId])
 }
 
 model AuditLog {
@@ -159,6 +265,49 @@ model Image {
   filename   String
   uploadedBy String
   createdAt  DateTime      @default(now())
+
+  @@index([requestId])
+}
+
+model QcResult {
+  id              String        @id @default(cuid())
+  requestId       String        @unique
+  request         SampleRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  outcome         QcOutcome
+  appearance      Boolean       @default(true)
+  aroma           Boolean       @default(true)
+  taste           Boolean       @default(true)
+  color           Boolean       @default(true)
+  specificGravity Float?
+  refractiveIndex Float?
+  pH              Float?
+  viscosity       Float?
+  moistureContent Float?
+  remarks         String?
+  testedById      String
+  testedBy        User          @relation("QcTester", fields: [testedById], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([requestId])
+}
+
+model Shipment {
+  id              String           @id @default(cuid())
+  requestId       String           @unique
+  request         SampleRequest    @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  carrier         ShippingCarrier?
+  trackingNumber  String?
+  shippingAddress String?
+  recipientName   String?
+  recipientPhone  String?
+  temperature     ShipTemp         @default(AMBIENT)
+  notes           String?
+  docsIncluded    String[]
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@index([requestId])
 }

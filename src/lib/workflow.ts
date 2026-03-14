@@ -25,7 +25,7 @@ export async function transitionState(
     throw new Error("User not found");
   }
 
-  if (!canUserTransition(user.role, request.status)) {
+  if (!canUserTransition(user.role, request.status, toStatus)) {
     throw new Error("You do not have permission to perform this action");
   }
 
